@@ -57,27 +57,38 @@ export interface Address {
   updatedAt?: string;
 }
 
+export interface OrderStats {
+  total: number;
+  totalDelivered: number;
+  totalPending: number;
+  totalInTransit: number;
+  totalCancelled: number;
+  totalFailedDelivery: number;
+  todayOrders: number;
+  todayDelivered: number;
+  revenue: {
+    total: number;
+    today: number;
+  };
+}
+
 export interface Order {
   _id: string;
   userId: string;
   trackingNumber: string;
-  status: 'PENDING' | 'CONFIRMED' | 'IN_TRANSIT' | 'DELIVERED';
+  status: 'PENDING' | 'CONFIRMED' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED';
   packageSize: 'SMALL' | 'MEDIUM' | 'LARGE';
+  price: number;
   isFragile: boolean;
   isExpressDelivery: boolean;
   requiresSpecialHandling: boolean;
-  price: number;
-  estimatedWeight: number;
-  estimatedDeliveryDate: string;
-  specialInstructions?: string;
-  createdAt: string;
-  updatedAt: string;
   items: OrderItem[];
   pickupAddress: Address;
-  deliveryAddress: {
-    type: 'manual';
-    manualAddress: Address;
-  } | string; // Can be either an address object or an address ID
+  deliveryAddress: Address;
+  specialInstructions?: string;
+  estimatedDeliveryDate: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Consumer Types
@@ -105,4 +116,19 @@ export interface ConsumerStats {
   newToday: number;
   newThisWeek: number;
   newThisMonth: number;
+}
+
+export interface OrderStatusUpdateResponse {
+  order: Order;
+  emailSent: boolean;
+}
+
+export interface Zone {
+  _id: string;
+  name: string;
+  deliveryPrice: number;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 } 

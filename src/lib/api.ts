@@ -1,4 +1,4 @@
-import { LoginCredentials, LoginResponse, User, Order } from './types';
+import { LoginCredentials, LoginResponse, User, Order, OrderStats, Zone } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://logistics-backend-1-s91j.onrender.com';
 
@@ -96,4 +96,155 @@ export async function getConsumerStats(): Promise<ConsumerStats> {
   if (!response.ok) throw new Error('Failed to fetch consumer stats');
   const data = await response.json();
   return data.data;
+}
+
+// Order APIs
+export async function getOrderStats(): Promise<OrderStats> {
+  const token = localStorage.getItem('adminToken');
+  const response = await fetch(`${API_BASE_URL}/api/admin/orders/stats`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) throw new Error('Failed to fetch order stats');
+  const data = await response.json();
+  return data.data;
+}
+
+export async function getOrders(params: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+}) {
+  const token = localStorage.getItem('adminToken');
+  const queryParams = new URLSearchParams({
+    page: params.page?.toString() || '1',
+    limit: params.limit?.toString() || '10',
+    ...(params.status && { status: params.status }),
+    ...(params.startDate && { startDate: params.startDate }),
+    ...(params.endDate && { endDate: params.endDate }),
+  });
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/admin/orders?${queryParams}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch orders');
+  }
+
+  const data = await response.json();
+  return data.data;
+}
+
+export async function updateOrderStatus(orderId: string, status: string, notes?: string) {
+  const token = localStorage.getItem('adminToken');
+  const response = await fetch(`${API_BASE_URL}/api/admin/orders/${orderId}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ 
+      status, 
+      notes 
+    }),
+  });
+
+  if (!response.ok) throw new Error('Failed to update order status');
+  const data = await response.json();
+  return {
+    order: data.data.order,
+    emailSent: data.data.emailSent
+  };
+}
+
+// Zone APIs
+export async function getZones(): Promise<Zone[]> {
+  const token = localStorage.getItem('adminToken');
+  const response = await fetch(`${API_BASE_URL}/api/zones`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) throw new Error('Failed to fetch zones');
+  const data = await response.json();
+  return data.data;
+}
+
+export async function getActiveZones(): Promise<Zone[]> {
+  const token = localStorage.getItem('adminToken');
+  const response = await fetch(`${API_BASE_URL}/api/zones/active`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) throw new Error('Failed to fetch active zones');
+  const data = await response.json();
+  return data.data;
+}
+
+export async function createZone(zoneData: {
+  name: string;
+  deliveryPrice: number;
+  description?: string;
+}): Promise<Zone> {
+  const token = localStorage.getItem('adminToken');
+  const response = await fetch(`${API_BASE_URL}/api/zones`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(zoneData),
+  });
+
+  if (!response.ok) throw new Error('Failed to create zone');
+  const data = await response.json();
+  return data.data;
+}
+
+export async function updateZone(
+  id: string, 
+  zoneData: {
+    name?: string;
+    deliveryPrice?: number;
+    description?: string;
+  }
+): Promise<Zone> {
+  const token = localStorage.getItem('adminToken');
+  const response = await fetch(`${API_BASE_URL}/api/zones/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(zoneData),
+  });
+
+  if (!response.ok) throw new Error('Failed to update zone');
+  const data = await response.json();
+  return data.data;
+}
+
+export async function deleteZone(id: string): Promise<void> {
+  const token = localStorage.getItem('adminToken');
+  const response = await fetch(`${API_BASE_URL}/api/zones/${id}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) throw new Error('Failed to delete zone');
 } 
