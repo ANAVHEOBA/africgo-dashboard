@@ -131,4 +131,62 @@ export interface Zone {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface StoreContactInfo {
+  email: string;
+  phone: string;
+  whatsapp?: string;
+}
+
+export interface StoreAddress {
+  street: string;
+  city: string;
+  state: string;
+  country: string;
+  postalCode: string;
+}
+
+export interface StoreSettings {
+  isVerified: boolean;
+  isFeaturedStore: boolean;
+  allowRatings: boolean;
+}
+
+export interface StoreMetrics {
+  totalOrders: number;
+  totalRevenue: number;
+  totalProducts: number;
+}
+
+export interface Store {
+  _id: string;
+  userId: {
+    _id: string;
+    email: string;
+  };
+  storeName: string;
+  description: string;
+  category: 'FASHION' | 'ELECTRONICS' | 'OTHER';
+  status: 'ACTIVE' | 'PENDING' | 'SUSPENDED';
+  contactInfo: StoreContactInfo;
+  address: StoreAddress;
+  settings: StoreSettings;
+  metrics: StoreMetrics;
+  createdAt: string;
+  updatedAt: string;
+  slug: string;
+  storeUrl: string;
+}
+
+export interface StorePagination {
+  total: number;
+  page: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
+export interface StoresResponse {
+  stores: Store[];
+  pagination: StorePagination;
 } 

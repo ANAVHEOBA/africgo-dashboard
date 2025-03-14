@@ -1,4 +1,4 @@
-import { LoginCredentials, LoginResponse, User, Order, OrderStats, Zone } from './types';
+import { LoginCredentials, LoginResponse, User, Order, OrderStats, Zone, Store, StoresResponse, ConsumerStats } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://logistics-backend-1-s91j.onrender.com';
 
@@ -247,4 +247,67 @@ export async function deleteZone(id: string): Promise<void> {
   });
 
   if (!response.ok) throw new Error('Failed to delete zone');
+}
+
+export async function getStores(params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  category?: string;
+  minRevenue?: number;
+  search?: string;
+}): Promise<StoresResponse> {
+  const token = localStorage.getItem('adminToken');
+  const queryParams = new URLSearchParams();
+
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        queryParams.append(key, String(value));
+      }
+    });
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/admin/stores?${queryParams}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('API Error Response:', errorText);
+    throw new Error(`Failed to fetch stores: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  
+  // Add logging to verify the structure
+  console.log('Stores API Response:', data);
+
+  // Ensure the response matches the expected structure
+  if (!data.success || !data.data) {
+    throw new Error('Invalid response structure');
+  }
+
+  return data.data;
+}
+
+export async function updateStoreStatus(
+  storeId: string, 
+  status: 'ACTIVE' | 'SUSPENDED'
+): Promise<Store> {
+  const token = localStorage.getItem('adminToken');
+  const response = await fetch(`${API_BASE_URL}/api/admin/stores/${storeId}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ status }),
+  });
+
+  if (!response.ok) throw new Error('Failed to update store status');
+  const data = await response.json();
+  return data.data;
 } 
