@@ -189,4 +189,25 @@ export interface StorePagination {
 export interface StoresResponse {
   stores: Store[];
   pagination: StorePagination;
+}
+
+export interface PaymentNotificationDetails {
+  orderNumber: string;
+  amount: number;
+  paymentReference: string;
+  consumerName: string;
+}
+
+export interface PaymentNotification {
+  _id: string;
+  orderId: string;
+  type: 'NEW_PAYMENT';
+  status: 'READ' | 'UNREAD';
+  details: PaymentNotificationDetails;
+  createdAt: string;
+}
+
+export interface PaymentNotificationsResponse {
+  notifications: PaymentNotification[];
+  total: number;
 } 

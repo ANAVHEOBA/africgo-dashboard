@@ -310,4 +310,40 @@ export async function updateStoreStatus(
   if (!response.ok) throw new Error('Failed to update store status');
   const data = await response.json();
   return data.data;
-} 
+}
+
+export async function getPaymentNotifications(params: { page?: number; limit?: number } = {}) {
+  const token = localStorage.getItem('adminToken');
+  const queryParams = new URLSearchParams({
+    page: params.page?.toString() || '1',
+    limit: params.limit?.toString() || '10',
+  });
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/admin/notifications/payments?${queryParams}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) throw new Error('Failed to fetch payment notifications');
+  const data = await response.json();
+  return data.data;
+}
+
+export async function markNotificationAsRead(notificationId: string): Promise<void> {
+  const token = localStorage.getItem('adminToken');
+  const response = await fetch(
+    `${API_BASE_URL}/api/admin/notifications/${notificationId}/mark-read`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) throw new Error('Failed to mark notification as read');
+}
