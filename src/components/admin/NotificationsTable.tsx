@@ -40,12 +40,6 @@ export default function NotificationsTable({ notifications, onNotificationRead }
                     Consumer
                   </th>
                   <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                    Amount
-                  </th>
-                  <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                    Payment Reference
-                  </th>
-                  <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                     Date
                   </th>
                   <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
@@ -63,13 +57,7 @@ export default function NotificationsTable({ notifications, onNotificationRead }
                       {notification.details.orderNumber}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {notification.details.consumerName}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      ${notification.details.amount.toFixed(2)}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {notification.details.paymentReference}
+                      {notification.details.consumerName || 'N/A'}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       {formatDate(notification.createdAt)}
