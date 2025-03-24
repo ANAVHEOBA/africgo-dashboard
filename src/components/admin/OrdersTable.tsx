@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getOrders, updateOrderStatus } from '@/lib/api';
-import { Order } from '@/lib/types';
+import { Order, OrderStatus } from '@/lib/types';
 import { formatDate, formatCurrency } from '@/lib/utils';
 
 export default function OrdersTable() {
@@ -38,7 +38,7 @@ export default function OrdersTable() {
     }
   };
 
-  const handleStatusUpdate = async (orderId: string, newStatus: string) => {
+  const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
     try {
       const result = await updateOrderStatus(orderId, newStatus);
       console.log(`Order ${orderId} status updated. Email sent: ${result.emailSent}`);
@@ -61,8 +61,12 @@ export default function OrdersTable() {
             <option value="">All Statuses</option>
             <option value="PENDING">Pending</option>
             <option value="CONFIRMED">Confirmed</option>
+            <option value="READY_FOR_PICKUP">Ready for Pickup</option>
+            <option value="PICKED_UP">Picked Up</option>
             <option value="IN_TRANSIT">In Transit</option>
             <option value="DELIVERED">Delivered</option>
+            <option value="CANCELLED">Cancelled</option>
+            <option value="FAILED_DELIVERY">Failed Delivery</option>
           </select>
         </div>
       </div>
@@ -102,7 +106,15 @@ export default function OrdersTable() {
                         ? 'bg-yellow-100 text-yellow-800'
                         : order.status === 'CONFIRMED'
                         ? 'bg-blue-100 text-blue-800'
-                        : 'bg-purple-100 text-purple-800'
+                        : order.status === 'READY_FOR_PICKUP'
+                        ? 'bg-orange-100 text-orange-800'
+                        : order.status === 'PICKED_UP'
+                        ? 'bg-indigo-100 text-indigo-800'
+                        : order.status === 'IN_TRANSIT'
+                        ? 'bg-purple-100 text-purple-800'
+                        : order.status === 'CANCELLED'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-gray-100 text-gray-800'
                     }`}
                   >
                     {order.status}
@@ -125,6 +137,22 @@ export default function OrdersTable() {
                       </button>
                     )}
                     {order.status === 'CONFIRMED' && (
+                      <button
+                        onClick={() => handleStatusUpdate(order._id, 'READY_FOR_PICKUP')}
+                        className="text-orange-600 hover:text-orange-900"
+                      >
+                        Mark Ready
+                      </button>
+                    )}
+                    {order.status === 'READY_FOR_PICKUP' && (
+                      <button
+                        onClick={() => handleStatusUpdate(order._id, 'PICKED_UP')}
+                        className="text-indigo-600 hover:text-indigo-900"
+                      >
+                        Mark Picked Up
+                      </button>
+                    )}
+                    {order.status === 'PICKED_UP' && (
                       <button
                         onClick={() => handleStatusUpdate(order._id, 'IN_TRANSIT')}
                         className="text-purple-600 hover:text-purple-900"

@@ -1,4 +1,4 @@
-import { LoginCredentials, LoginResponse, User, Order, OrderStats, Zone, Store, StoresResponse, ConsumerStats } from './types';
+import { LoginCredentials, LoginResponse, User, Order, OrderStats, Zone, Store, StoresResponse, ConsumerStats, OrderStatus, OrderStatusUpdateResponse } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://logistics-backend-1-s91j.onrender.com';
 
@@ -145,7 +145,11 @@ export async function getOrders(params: {
   return data.data;
 }
 
-export async function updateOrderStatus(orderId: string, status: string, notes?: string) {
+export async function updateOrderStatus(
+  orderId: string, 
+  status: OrderStatus,
+  notes?: string
+): Promise<OrderStatusUpdateResponse> {
   const token = localStorage.getItem('adminToken');
   const response = await fetch(`${API_BASE_URL}/api/admin/orders/${orderId}/status`, {
     method: 'PATCH',

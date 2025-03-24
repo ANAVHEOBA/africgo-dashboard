@@ -72,11 +72,21 @@ export interface OrderStats {
   };
 }
 
+export type OrderStatus = 
+  | 'PENDING' 
+  | 'CONFIRMED' 
+  | 'READY_FOR_PICKUP'
+  | 'PICKED_UP' 
+  | 'IN_TRANSIT' 
+  | 'DELIVERED' 
+  | 'CANCELLED' 
+  | 'FAILED_DELIVERY';
+
 export interface Order {
   _id: string;
   userId: string;
   trackingNumber: string;
-  status: 'PENDING' | 'CONFIRMED' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED';
+  status: OrderStatus;
   packageSize: 'SMALL' | 'MEDIUM' | 'LARGE';
   price: number;
   isFragile: boolean;
