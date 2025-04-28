@@ -201,7 +201,7 @@ export async function getActiveZones(): Promise<Zone[]> {
 export async function createZone(zoneData: {
   name: string;
   deliveryPrice: number;
-  description?: string;
+  isActive: boolean;
 }): Promise<Zone> {
   const token = localStorage.getItem('adminToken');
   const response = await fetch(`${API_BASE_URL}/api/zones`, {
@@ -210,10 +210,19 @@ export async function createZone(zoneData: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(zoneData),
+    body: JSON.stringify({
+      name: zoneData.name,
+      deliveryPrice: zoneData.deliveryPrice,
+      isActive: zoneData.isActive
+    }),
   });
 
-  if (!response.ok) throw new Error('Failed to create zone');
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    console.error('API Error:', errorData);
+    throw new Error(errorData.message || 'Failed to create zone');
+  }
+  
   const data = await response.json();
   return data.data;
 }
@@ -224,6 +233,7 @@ export async function updateZone(
     name?: string;
     deliveryPrice?: number;
     description?: string;
+    isActive?: boolean;
   }
 ): Promise<Zone> {
   const token = localStorage.getItem('adminToken');
@@ -236,7 +246,11 @@ export async function updateZone(
     body: JSON.stringify(zoneData),
   });
 
-  if (!response.ok) throw new Error('Failed to update zone');
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to update zone');
+  }
+  
   const data = await response.json();
   return data.data;
 }

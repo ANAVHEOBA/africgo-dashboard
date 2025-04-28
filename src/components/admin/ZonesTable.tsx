@@ -9,11 +9,18 @@ export default function ZonesTable() {
   const [zones, setZones] = useState<Zone[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingZone, setEditingZone] = useState<Partial<Zone> | null>(null);
-  const [newZone, setNewZone] = useState({
+  const [newZone, setNewZone] = useState<{
+    name: string;
+    deliveryPrice: number;
+    isActive: boolean;
+    description?: string;
+  }>({
     name: '',
     deliveryPrice: 0,
-    description: '',
+    isActive: true,
+    description: ''
   });
+  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     fetchZones();
@@ -33,12 +40,29 @@ export default function ZonesTable() {
 
   const handleCreateZone = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate inputs
+    if (!newZone.name.trim()) {
+      alert('Please enter a zone name');
+      return;
+    }
+
+    if (newZone.deliveryPrice <= 0) {
+      alert('Please enter a delivery price greater than 0');
+      return;
+    }
+
     try {
-      const createdZone = await createZone(newZone);
+      const createdZone = await createZone({
+        name: newZone.name.trim(),
+        deliveryPrice: newZone.deliveryPrice,
+        isActive: true
+      });
       setZones([...zones, createdZone]);
-      setNewZone({ name: '', deliveryPrice: 0, description: '' });
+      setNewZone({ name: '', deliveryPrice: 0, isActive: true, description: '' });
     } catch (error) {
       console.error('Failed to create zone:', error);
+      alert('Failed to create zone. Please try again.');
     }
   };
 
@@ -46,11 +70,22 @@ export default function ZonesTable() {
     e.preventDefault();
     if (!editingZone?._id) return;
 
+    // Validate inputs
+    if (!editingZone.name?.trim()) {
+      alert('Please enter a zone name');
+      return;
+    }
+
+    if (!editingZone.deliveryPrice || editingZone.deliveryPrice <= 0) {
+      alert('Please enter a delivery price greater than 0');
+      return;
+    }
+
     try {
       const updatedZone = await updateZone(editingZone._id, {
-        name: editingZone.name,
+        name: editingZone.name.trim(),
         deliveryPrice: editingZone.deliveryPrice,
-        description: editingZone.description,
+        isActive: editingZone.isActive
       });
       
       setZones(zones.map(zone => 
@@ -59,6 +94,7 @@ export default function ZonesTable() {
       setEditingZone(null);
     } catch (error) {
       console.error('Failed to update zone:', error);
+      alert('Failed to update zone. Please try again.');
     }
   };
 
@@ -76,7 +112,10 @@ export default function ZonesTable() {
       <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-800">Zones Management</h2>
         <button 
-          onClick={() => setEditingZone(null)}
+          onClick={() => {
+            setEditingZone(null);
+            setShowForm(true);
+          }}
           className="bg-gold text-white px-4 py-2 rounded-md hover:bg-gold-600 transition-colors"
         >
           + Add New Zone
@@ -84,13 +123,15 @@ export default function ZonesTable() {
       </div>
       
       {/* Create/Edit Zone Form */}
-      {(editingZone || !zones.length) && (
+      {(showForm || editingZone) && (
         <form 
-          onSubmit={editingZone ? handleUpdateZone : handleCreateZone} 
-          className="p-6 bg-gray-50 grid grid-cols-1 md:grid-cols-4 gap-4"
+          onSubmit={editingZone?._id ? handleUpdateZone : handleCreateZone} 
+          className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm grid grid-cols-1 md:grid-cols-4 gap-6"
         >
           <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Zone Name</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Zone Name <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               placeholder="Enter zone name"
@@ -101,26 +142,38 @@ export default function ZonesTable() {
                   : setNewZone({...newZone, name: e.target.value})
               }
               required
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-gold focus:border-gold"
+              className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-gray-700 focus:ring-2 focus:ring-gold focus:border-gold shadow-sm"
             />
           </div>
           <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Price</label>
-            <input
-              type="number"
-              placeholder="Enter delivery price"
-              value={editingZone ? editingZone.deliveryPrice || 0 : newZone.deliveryPrice}
-              onChange={(e) => 
-                editingZone 
-                  ? setEditingZone({...editingZone, deliveryPrice: Number(e.target.value)})
-                  : setNewZone({...newZone, deliveryPrice: Number(e.target.value)})
-              }
-              required
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-gold focus:border-gold"
-            />
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Delivery Price <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">₦</span>
+              <input
+                type="number"
+                placeholder="Enter delivery price"
+                value={editingZone ? editingZone.deliveryPrice || '' : newZone.deliveryPrice || ''}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value) || 0;
+                  if (editingZone) {
+                    setEditingZone({...editingZone, deliveryPrice: value});
+                  } else {
+                    setNewZone({...newZone, deliveryPrice: value});
+                  }
+                }}
+                required
+                min="0"
+                step="100"
+                className="w-full border border-gray-300 rounded-md pl-8 pr-4 py-2.5 text-gray-700 focus:ring-2 focus:ring-gold focus:border-gold shadow-sm"
+              />
+            </div>
           </div>
           <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Description
+            </label>
             <input
               type="text"
               placeholder="Optional description"
@@ -130,25 +183,27 @@ export default function ZonesTable() {
                   ? setEditingZone({...editingZone, description: e.target.value})
                   : setNewZone({...newZone, description: e.target.value})
               }
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-gold focus:border-gold"
+              className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-gray-700 focus:ring-2 focus:ring-gold focus:border-gold shadow-sm"
             />
           </div>
-          <div className="md:col-span-1 flex items-end space-x-2">
+          <div className="md:col-span-1 flex items-end space-x-3">
             <button 
               type="submit" 
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+              className="flex-1 bg-gold text-white px-6 py-2.5 rounded-md hover:bg-gold-600 transition-colors font-medium shadow-sm"
             >
               {editingZone ? 'Update Zone' : 'Create Zone'}
             </button>
-            {editingZone && (
-              <button 
-                type="button" 
-                onClick={() => setEditingZone(null)}
-                className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors"
-              >
-                Cancel
-              </button>
-            )}
+            <button 
+              type="button" 
+              onClick={() => {
+                setEditingZone(null);
+                setShowForm(false);
+                setNewZone({ name: '', deliveryPrice: 0, isActive: true, description: '' });
+              }}
+              className="flex-1 bg-gray-200 text-gray-700 px-6 py-2.5 rounded-md hover:bg-gray-300 transition-colors font-medium shadow-sm"
+            >
+              Cancel
+            </button>
           </div>
         </form>
       )}
@@ -156,12 +211,12 @@ export default function ZonesTable() {
       {/* Zones Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-100 border-b border-gray-200">
+          <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Delivery Price</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Description</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Name</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Delivery Price</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Description</th>
+              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -172,14 +227,17 @@ export default function ZonesTable() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{zone.description || 'No description'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button 
-                    onClick={() => setEditingZone(zone)}
-                    className="text-blue-600 hover:text-blue-900 mr-4"
+                    onClick={() => {
+                      setEditingZone(zone);
+                      setShowForm(true);
+                    }}
+                    className="text-blue-600 hover:text-blue-900 mr-4 font-medium"
                   >
                     Edit
                   </button>
                   <button 
                     onClick={() => handleDeleteZone(zone._id)}
-                    className="text-red-600 hover:text-red-900"
+                    className="text-red-600 hover:text-red-900 font-medium"
                   >
                     Delete
                   </button>
@@ -211,7 +269,10 @@ export default function ZonesTable() {
           <div className="mt-6">
             <button
               type="button"
-              onClick={() => setEditingZone({})}
+              onClick={() => {
+                setEditingZone(null);
+                setShowForm(true);
+              }}
               className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gold hover:bg-gold-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold"
             >
               + Add Zone
