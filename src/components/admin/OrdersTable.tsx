@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getOrders, updateOrderStatus } from '@/lib/api';
 import { Order, OrderStatus } from '@/lib/types';
 import { formatDate, formatCurrency } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 export default function OrdersTable() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -18,14 +19,12 @@ export default function OrdersTable() {
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
-    pages: 1,
+    limit: 10,
+    pages: 0,
   });
+  const router = useRouter();
 
-  useEffect(() => {
-    fetchOrders();
-  }, [filters]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getOrders(filters);
@@ -36,7 +35,11 @@ export default function OrdersTable() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
     try {
@@ -48,14 +51,29 @@ export default function OrdersTable() {
     }
   };
 
+  const handleViewDetails = (orderId: string) => {
+    router.push(`/admin/orders/${orderId}`);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > pagination.pages) return;
+    setFilters(prev => ({ ...prev, page: newPage }));
+  };
+
+  const handleStatusChange = (status: string) => {
+    setFilters(prev => ({ ...prev, status, page: 1 }));
+  };
+
+  if (loading) return <div>Loading orders...</div>;
+
   return (
-    <div className="bg-white shadow rounded-lg">
+    <div className="bg-white shadow-lg rounded-xl overflow-hidden">
       <div className="p-4 flex justify-between items-center">
         <h3 className="text-lg font-medium text-gray-900">Orders</h3>
         <div className="flex space-x-2">
           <select
             value={filters.status}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+            onChange={(e) => handleStatusChange(e.target.value)}
             className="border rounded px-2 py-1"
           >
             <option value="">All Statuses</option>
@@ -86,7 +104,7 @@ export default function OrdersTable() {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Delivery Date
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -126,8 +144,14 @@ export default function OrdersTable() {
                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                   {formatDate(order.estimatedDeliveryDate)}
                 </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleViewDetails(order._id)}
+                      className="text-indigo-600 hover:text-indigo-900"
+                    >
+                      View Details
+                    </button>
                     {order.status === 'PENDING' && (
                       <button
                         onClick={() => handleStatusUpdate(order._id, 'CONFIRMED')}
@@ -174,6 +198,59 @@ export default function OrdersTable() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination */}
+      <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+        <div className="flex-1 flex justify-between sm:hidden">
+          <button 
+            onClick={() => handlePageChange(filters.page - 1)}
+            disabled={filters.page === 1}
+            className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          <button 
+            onClick={() => handlePageChange(filters.page + 1)}
+            disabled={filters.page >= pagination.pages}
+            className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
+        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-gray-700">
+              Showing{' '}
+              <span className="font-medium">{(filters.page - 1) * filters.limit + 1}</span>{' '}
+              to{' '}
+              <span className="font-medium">{Math.min(filters.page * filters.limit, pagination.total)}</span>{' '}
+              of{' '}
+              <span className="font-medium">{pagination.total}</span>{' '}
+              results
+            </p>
+          </div>
+          <div>
+            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <button 
+                onClick={() => handlePageChange(filters.page - 1)}
+                disabled={filters.page === 1}
+                className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="sr-only">Previous</span>
+                Previous
+              </button>
+              <button 
+                onClick={() => handlePageChange(filters.page + 1)}
+                disabled={filters.page >= pagination.pages}
+                className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="sr-only">Next</span>
+                Next
+              </button>
+            </nav>
+          </div>
+        </div>
       </div>
     </div>
   );
