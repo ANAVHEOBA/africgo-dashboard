@@ -443,3 +443,25 @@ export async function updateStoreOrder(
   const data = await response.json();
   return data.data;
 }
+
+export async function bulkUpdateStoreOrder(
+  stores: { storeId: string; displayOrder: number }[]
+): Promise<{ success: boolean; message: string }> {
+  const token = localStorage.getItem('adminToken');
+  const response = await fetch(`${API_BASE_URL}/api/admin/stores/bulk-order`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ stores }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to update store orders');
+  }
+  
+  const data = await response.json();
+  return data;
+}
